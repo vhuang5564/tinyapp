@@ -39,6 +39,10 @@ app.get("/set", (req, res) => {
    res.render('urls_index', templateVars);
  });
 
+ app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
  app.get("/urls/:shortURL", (req, res) => {
    let miniURL = req.params.shortURL; // b2xVn2 format
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[miniURL] }; 
