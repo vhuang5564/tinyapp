@@ -40,6 +40,7 @@ app.get("/set", (req, res) => {
  });
 
  app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL/* What goes here? */ };
+   let miniURL = req.params.shortURL; // b2xVn2 format
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[miniURL] }; 
   res.render("urls_show", templateVars);
 });
