@@ -60,7 +60,13 @@ app.get("/set", (req, res) => {
 });
 
  app.get("/urls/:shortURL", (req, res) => {
-  let miniURL = req.params.shortURL; // b2xVn2 format
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[miniURL] }; 
+  const longURL = urlDatabase[req.params.shortURL]; // urlDatabase with b2xVn2 format(req.params.shortURL) as key
+  const templateVars = { shortURL: req.params.shortURL, longURL: longURL }; 
   res.render("urls_show", templateVars);
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL]
+  res.redirect(longURL);
+  // res.redirect('http://www.lighthouselabs.ca')
 });
