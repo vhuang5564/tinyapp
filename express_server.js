@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const morgan = require('morgan');
 
 app.use(express.urlencoded({extended: false}));
-// app.use(morgan('dev'));
+app.use(morgan('dev'));
 
 
 app.set("view engine", "ejs");
@@ -45,12 +45,12 @@ app.get("/set", (req, res) => {
  });
 
  app.get('/urls', (req, res) => {
-   const templateVars = { urls: urlDatabase };
-   res.render('urls_index', templateVars);
- });
+  const templateVars = { urls: urlDatabase };
+  res.render('urls_index', templateVars);
+});
 
 // DELETE POST all post should end with redirect all gets should end with render
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL]; // deletes shortURL key: value pair
   res.redirect('/urls'); // redirects back to /urls
 })
@@ -65,7 +65,14 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.render("urls_new");
 });
 
- app.get("/urls/:shortURL", (req, res) => {
+app.post('/urls/:shortURL/', (req, res) => { // edit URL
+  const longURL = req.params.shortURL;
+  const body = req.body // body['newURL'] is new URL inputted in to edit box
+  urlDatabase[longURL] = body['newURL']; // edits newURL in to oldURL
+  res.redirect(`/urls/${req.params.shortURL}`) // redirects back to new URL
+})
+
+app.get("/urls/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]; // urlDatabase with b2xVn2 format(req.params.shortURL) as key
   const templateVars = { shortURL: req.params.shortURL, longURL: longURL }; 
   res.render("urls_show", templateVars);
