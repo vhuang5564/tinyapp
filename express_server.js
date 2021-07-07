@@ -16,7 +16,7 @@ const urlDatabase = {
 };
 
 function generateRandomString() {
-
+  return Math.random().toString(36).substring(2, 8)
 }
 
 app.get("/", (req, res) => {
@@ -55,9 +55,10 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls'); // redirects back to /urls
 })
  
- app.post("/urls", (req, res) => { // 
-  console.log(req.body);  // Log the POST request body to the console, req.body = { longURL: 'input'}
-  res.send("Ok");         // Respond with 'Ok' (we will replace this), output on page after input
+ app.post("/urls", (req, res) => { // add POST request
+  const longURL = req.body['longURL'];  // Log the POST request body to the console, req.body = { longURL: 'input'}
+  urlDatabase[generateRandomString()] = longURL;
+  res.redirect('/urls');         // Respond with 'Ok' (we will replace this), output on page after input
 });
 
 
@@ -68,7 +69,10 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.post('/urls/:shortURL/', (req, res) => { // edit URL
   const longURL = req.params.shortURL;
   const body = req.body // body['newURL'] is new URL inputted in to edit box
-  urlDatabase[longURL] = body['newURL']; // edits newURL in to oldURL
+  if (req.body['newURL']) {
+    urlDatabase[longURL] = body['newURL']; // edits newURL in to oldURL
+  }
+  console.log(urlDatabase[longURL]);
   res.redirect(`/urls/${req.params.shortURL}`) // redirects back to new URL
 })
 
@@ -84,3 +88,6 @@ app.get("/u/:shortURL", (req, res) => {
   // res.redirect('http://www.lighthouselabs.ca')
 });
 
+// app.post('/login', (req, res) => {
+//   res.cookie = 
+// })
