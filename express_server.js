@@ -125,11 +125,10 @@ app.post('/register', (req, res) => { // register
   const email = req.body['email'];
   const password = req.body['password'];
   const id = generateRandomString()
-  const newUser = id
-  users[newUser]['id'] = newUser;
-  users[newUser]['email'] = email;
-  users[newUser]['password'] = password;
-  console.log(users);
-
+  users[id] = {};
+  users[id]['id'] = id;
+  users[id]['email'] = email;
+  users[id]['password'] = password;
+  const templateVars = { users: users[id] };
   res.redirect('/register');
 })
