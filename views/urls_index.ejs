@@ -21,6 +21,22 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+
+    <!-- Cookie Login not yet completed -->
+
+    <% if(true) { %>
+      <form method = "POST" action="/logout">
+        <button type = 'submit'>Logout</button>
+      </form>
+    <%} else { %>
+      <form method = "POST" action="/login">
+        <label>username</label>
+        <input name ='username'/>
+        <button type = 'submit'>Enter</button>
+      </form>
+    <% } %>
+
+
   </nav>
   </header>
   <main style="margin: 1em;">

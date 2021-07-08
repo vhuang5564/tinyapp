@@ -3,9 +3,12 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 
 app.use(express.urlencoded({extended: false}));
 app.use(morgan('dev'));
+app.use(express.static('public'));
+app.use(cookieParser());
 
 
 app.set("view engine", "ejs");
@@ -72,7 +75,6 @@ app.post('/urls/:shortURL/', (req, res) => { // edit URL
   if (req.body['newURL']) {
     urlDatabase[longURL] = body['newURL']; // edits newURL in to oldURL
   }
-  console.log(urlDatabase[longURL]);
   res.redirect(`/urls/${req.params.shortURL}`) // redirects back to new URL
 })
 
@@ -88,6 +90,16 @@ app.get("/u/:shortURL", (req, res) => {
   // res.redirect('http://www.lighthouselabs.ca')
 });
 
-// app.post('/login', (req, res) => {
-//   res.cookie = 
-// })
+app.get('/login', (req,res) => { // renders login
+  res.render('login')
+})
+
+app.post('/login', (req, res) => { // /login
+  res.cookie('username', req.body['username'])
+  res.redirect('/login');
+})
+
+app.post('/logout', (req, res) => { // logout
+  res.clearCookie('username');
+  res.redirect('/urls');
+})
