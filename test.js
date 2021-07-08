@@ -1,25 +1,16 @@
-email = 'user@example.com'
+const bcrypt = require('bcryptjs');
 
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  }
-}
+const plaintextPassword = 'hello';
 
-const findUserByEmail = email => {
-  for (const id in users) {
-    const user = users[id]
-    if(user.email === email) {
-      return user;
-    } 
-  }
-}
+bcrypt.genSalt(10, (err, salt) => {
+  bcrypt.hash(plaintextPassword, salt, (err, hash) => {
+    console.log(hash);
+  });
+});
 
-console.log(findUserByEmail('user@example.com'))
+const hashedPassword = '$2a$10$saoP5b.GNQVG8O0NP2jjQuj0lJQt6hORebTUVJlDxrGQNyM3qWGPe'
+const testPassword = 'apple'
+
+bcrypt.compare(testPassword, hashedPassword, (err, result) => {
+  console.log(result);
+})

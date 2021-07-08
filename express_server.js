@@ -4,6 +4,7 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 
 app.use(express.urlencoded({extended: false}));
 app.use(morgan('dev'));
@@ -157,10 +158,16 @@ app.post('/register', (req, res) => { // register
     return res.status(400).send('email already exists')
   }
 
-  users[id] = {};
+  bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.hash(password, salt, (err, hash) => {
+      users[id]['password'] = hash;
+    })
+  })
+
+  users[id] = {}; // creates new user
       users[id]['id'] = id;
       users[id]['email'] = email;
-      users[id]['password'] = password;
+      console.log(users);
       res.redirect('/register');
 })
 
@@ -175,13 +182,15 @@ app.post('/login', (req, res) => {
     res.status(400).send('email not found')
   }
 
-  if (user.password !== password) {
-    return res.status(400).send('password does not match')
-  }
 
-  res.cookie('userID', user.ID);
+  bcrypt.compare(password, user.password, (err, result) => { // compares hashed password
+    if (!result) {
+      return res.status(400).send('password does not match')
+    }
+    res.cookie('userID', user.ID);
 
-  res.redirect('/protected');
+    res.redirect('/protected');
+  });
 })
 
 app.get('/protected', (req, res) => {
@@ -193,7 +202,6 @@ app.get('/protected', (req, res) => {
   const user = users[userID]
 
   console.log(user);
-
 
   res.render('protected', { user, users });
 
