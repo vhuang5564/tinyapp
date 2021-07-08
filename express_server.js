@@ -127,11 +127,6 @@ app.get('/login', (req,res) => { // renders login
   res.render('login')
 })
 
-// app.post('/login', (req, res) => { // /login
-//   res.cookie('username', req.body['username'])
-//   res.redirect('/urls');
-// })
-
 app.post('/logout', (req, res) => { // logout
   res.clearCookie('username');
   res.redirect('/urls');
