@@ -3,7 +3,6 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const morgan = require('morgan');
-// const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const e = require("express");
@@ -11,12 +10,10 @@ const e = require("express");
 app.use(express.urlencoded({extended: false}));
 app.use(morgan('dev'));
 app.use(express.static('public'));
-// app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }));
-
 
 app.set("view engine", "ejs");
 
@@ -110,8 +107,10 @@ app.get("/set", (req, res) => {
   urlsForUser(); // uses function, can refactor and remove this... later...
 
   if (!userID) { // redirects to /login if you are not logged in
-    console.log('log in to see your URLs')
+    console.log('you are not authorized to view this page')
     res.redirect('/login');
+    /* res.status(401).send('you have to be logged in to view this page'); assignment asks to be redirected to html page but it is hard to navigate back to home page
+    because / redirects you back to /urls which directs you redirects you to this error page. */
   }
 
   const templateVars = { urls: userURL, userID: userID, users: users }; // urls detected are only from userURLs
@@ -170,13 +169,27 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]['longURL']; // fixed
-  res.redirect(longURL);
+
+  console.log(req.params.shortURL);
+
+  for (url in urlDatabase) {
+    if (req.params.shortURL === url) {
+      const longURL = urlDatabase[req.params.shortURL]['longURL']; // fixed
+      res.redirect(longURL);
+    }
+  }
+
+  res.status(404).send('this page does not exist.')
+
   // res.redirect('http://www.lighthouselabs.ca')
 });
 
 app.get('/login', (req,res) => { // renders login
   const userID = req.session.userID;
+
+  if (userID) {
+    res.redirect('/urls');
+  }
 
   const templateVars = { userID: userID, users: users }
   res.render('login', templateVars);
@@ -208,10 +221,8 @@ app.post('/register', (req, res) => { // register
   const password = req.body['password'];
   const id = generateRandomString()
 
-  console.log(users);
-
-  if (email === '') {
-    return res.status(400).send('email cannot be blank');
+  if (email === '' || password === '') { // will return err if email/pw are blank but used type-require for email + pw so this err will probably never show up
+    return res.status(400).send('email/password cannot be blank');
   }
 
   user = findUserByEmail(email);
@@ -229,25 +240,20 @@ app.post('/register', (req, res) => { // register
   users[id] = {}; // creates new user
       users[id]['id'] = id;
       users[id]['email'] = email;
-      console.log(users);
-      res.redirect('/register');
+      req.session.userID = users[id]['id'];
+      res.redirect('/urls');
 })
 
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  console.log('password: ' + password);
   
   user = findUserByEmail(email);
-  console.log('user.password: ' + user.password)
-
 
   if (!user) {
     res.status(400).send('email not found')
   }
   
-
-
   bcrypt.compare(password, user.password, (err, result) => { // compares hashed password
     if (!result) {
       return res.status(400).send('password does not match')
