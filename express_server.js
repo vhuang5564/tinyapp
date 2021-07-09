@@ -101,8 +101,9 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 
  app.get("/urls/new", (req, res) => {
-  const userID = req.cookies.userID;
+  const userID = req.session.userID;
   if (!userID) {
+    console.log('you are not authorized to create new URLs');
     return res.redirect('/login');
   }
   res.render("urls_new");
