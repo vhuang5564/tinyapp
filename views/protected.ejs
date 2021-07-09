@@ -10,7 +10,7 @@
 </head>
 <body>
   <%- include('partials/_header') %>
-  <h2>you are logged in as <%= users.email%></h2>
+  <h2>you are logged in as <%= users[userID]['email'] %></h2>
   <form method = "POST" action="/logout">
     <button type = 'submit'>Logout</button>
   </form>

@@ -10,29 +10,14 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-
-<!-- Cookie Login not yet completed -->
-
-
-  <a href ="/login">Login</a>
-  <a href ="/register">Register</a>
-
-
-<!-- <% let cookie = false %>
-
-<% if(cookie === false) { %>
-  <% cookie = true %>
-  <form method = "POST" action="/login">
-    <label>username</label>
-    <input name ='username'/>
-    <button type = 'submit'>Enter</button>
-  </form>
-<%} else { %>
-  <% cookie = false %>
-  <form method = "POST" action="/logout">
-    <button type = 'submit'>Logout</button>
-  </form>
-<% } %> -->
-
+  <% if(!userID) { %>
+    <a href ="/login">Login</a>
+    <a href ='/register'>Register</a>
+  <%} else { %>
+    <form method = "POST" action="/logout">
+      <h2>You are logged in as <%= users[userID]['email'] %></h2>
+      <button type = 'submit'>Logout</button>
+    </form>
+  <% } %> 
   </nav>
 </header>

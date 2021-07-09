@@ -6,6 +6,7 @@ const morgan = require('morgan');
 // const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const e = require("express");
 
 app.use(express.urlencoded({extended: false}));
 app.use(morgan('dev'));
@@ -20,8 +21,14 @@ app.use(cookieSession({
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "a"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "a"
+  }
 };
 
 const users = { 
@@ -35,10 +42,10 @@ const users = {
     email: "user2@example.com", 
     password: "dishwasher-funk"
   },
-  'randomID': {
+  'a': {
     id: 'a',
     email: 'a@a.com',
-    password: '1234'
+    password: '$2a$10$kW7bnZHyv9TpsUy0B2pWXu5B37aleX/3JO/fdC2VqfoqYl0THRP3O' // hashed version of 1234
   }
 }
 
@@ -57,6 +64,12 @@ const findUserByEmail = email => {
 }
 
 app.get("/", (req, res) => {
+  const userID = req.session.userID;
+
+  if (!userID) {
+    res.redirect('/login')
+  }
+
   res.redirect('/urls')
 });
 
@@ -82,7 +95,26 @@ app.get("/set", (req, res) => {
  });
 
  app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const userID = req.session.userID;
+  let userURL = {}
+
+  const urlsForUser = id => { // finds if id is equal. if equal returns userURLs only
+    const userID = req.session.userID
+    for (url in urlDatabase) {
+      if (urlDatabase[url]['userID'] === userID) {
+        userURL = urlDatabase;
+      }
+    }
+  }
+
+  urlsForUser(); // uses function, can refactor and remove this... later...
+
+  if (!userID) { // redirects to /login if you are not logged in
+    console.log('log in to see your URLs')
+    res.redirect('/login');
+  }
+
+  const templateVars = { urls: userURL, userID: userID, users: users }; // urls detected are only from userURLs
   res.render('urls_index', templateVars);
 });
 
@@ -94,44 +126,60 @@ app.post('/urls/:shortURL/delete', (req, res) => {
  
  app.post("/urls", (req, res) => { // add POST request
   const longURL = req.body['longURL'];  // Log the POST request body to the console, req.body = { longURL: 'input'}
-  urlDatabase[generateRandomString()] = longURL;
-  res.redirect('/urls');         // Respond with 'Ok' (we will replace this), output on page after input
+  urlDatabase[generateRandomString()] = { 'longURL': longURL, 'userID': req.session.userID}; // inputs new id and longURL
+  console.log(urlDatabase);
+  res.redirect('/urls');         // redirects back to url
   
 });
 
 
  app.get("/urls/new", (req, res) => {
   const userID = req.session.userID;
+  
+
+  const templateVars = { userID: userID, users: users}
   if (!userID) {
     console.log('you are not authorized to create new URLs');
     return res.redirect('/login');
   }
-  res.render("urls_new");
+  res.render("urls_new", templateVars);
 });
 
-app.post('/urls/:shortURL/', (req, res) => { // edit URL
-  const longURL = req.params.shortURL;
+app.post('/urls/:shortURL/', (req, res) => { // edit URL fixed
+  const shortURL = req.params.shortURL;
   const body = req.body // body['newURL'] is new URL inputted in to edit box
   if (req.body['newURL']) {
-    urlDatabase[longURL] = body['newURL']; // edits newURL in to oldURL
+    urlDatabase[shortURL]['longURL'] = body['newURL']; // edits newURL in to oldURL
   }
   res.redirect(`/urls/${req.params.shortURL}`) // redirects back to new URL
 })
 
 app.get("/urls/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]; // urlDatabase with b2xVn2 format(req.params.shortURL) as key
-  const templateVars = { shortURL: req.params.shortURL, longURL: longURL }; 
-  res.render("urls_show", templateVars);
+  const userID = req.session.userID;
+  
+  for (url in urlDatabase) { // if url in hyperlink is equal to url in database go to url
+    if (url == req.params.shortURL) {
+      const longURL = urlDatabase[req.params.shortURL]['longURL']; // urlDatabase with b2xVn2 format(req.params.shortURL) as key
+      const templateVars = { shortURL: req.params.shortURL, longURL: longURL, userID: userID, users: users }; 
+      res.render("urls_show", templateVars);
+    } 
+  }
+
+  res.status(404).send('404 error page not found'); // else return error 
+
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
+  const longURL = urlDatabase[req.params.shortURL]['longURL']; // fixed
   res.redirect(longURL);
   // res.redirect('http://www.lighthouselabs.ca')
 });
 
 app.get('/login', (req,res) => { // renders login
-  res.render('login')
+  const userID = req.session.userID;
+
+  const templateVars = { userID: userID, users: users }
+  res.render('login', templateVars);
 })
 
 app.post('/logout', (req, res) => { // logout
@@ -145,7 +193,14 @@ app.get('/error', (req, res) => {
 })
 
 app.get('/register', (req, res) => { // renders register page
-  res.render('register')
+  const userID = req.session.userID;
+
+  if (userID) { // if user is logged in redirect to
+    res.redirect('/urls')
+  }
+
+  const templateVars = { userID: userID, users: users }
+  res.render('register', templateVars)
 })
 
 app.post('/register', (req, res) => { // register
@@ -190,6 +245,7 @@ app.post('/login', (req, res) => {
   if (!user) {
     res.status(400).send('email not found')
   }
+  
 
 
   bcrypt.compare(password, user.password, (err, result) => { // compares hashed password
@@ -206,14 +262,15 @@ app.post('/login', (req, res) => {
 app.get('/protected', (req, res) => {
   // const userID = req.cookies.userID;
   const userID = req.session.userID;
+
+
   if (!userID) {
     return res.status(401).send('you are not authorized to be here');
   }
 
   const user = users[userID]
 
-  console.log(user);
 
-  res.render('protected', { user, users });
+  res.render('protected', { user, users, userID });
 
 })
