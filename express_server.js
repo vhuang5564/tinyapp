@@ -3,13 +3,18 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const morgan = require('morgan');
-const cookieParser = require('cookie-parser');
+// const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
 app.use(express.urlencoded({extended: false}));
 app.use(morgan('dev'));
 app.use(express.static('public'));
-app.use(cookieParser());
+// app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}));
 
 
 app.set("view engine", "ejs");
@@ -129,7 +134,8 @@ app.get('/login', (req,res) => { // renders login
 })
 
 app.post('/logout', (req, res) => { // logout
-  res.clearCookie('userID');
+  // res.clearCookie('userID');
+  req.session = null;
   res.redirect('/urls');
 })
 
@@ -174,9 +180,11 @@ app.post('/register', (req, res) => { // register
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  console.log('password: ' + password);
   
   user = findUserByEmail(email);
-  console.log(findUserByEmail(email));
+  console.log('user.password: ' + user.password)
+
 
   if (!user) {
     res.status(400).send('email not found')
@@ -187,14 +195,16 @@ app.post('/login', (req, res) => {
     if (!result) {
       return res.status(400).send('password does not match')
     }
-    res.cookie('userID', user.ID);
+    // res.cookie('userID', user.ID);
+    req.session.userID = user.id
 
     res.redirect('/protected');
   });
 })
 
 app.get('/protected', (req, res) => {
-  const userID = req.cookies.userID;
+  // const userID = req.cookies.userID;
+  const userID = req.session.userID;
   if (!userID) {
     return res.status(401).send('you are not authorized to be here');
   }
