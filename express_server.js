@@ -6,6 +6,8 @@ const morgan = require('morgan');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const e = require("express");
+const { findUserByEmail } = require('./helpers')
+const { generateRandomString } = require('./helpers')
 
 app.use(express.urlencoded({extended: false}));
 app.use(morgan('dev'));
@@ -17,48 +19,10 @@ app.use(cookieSession({
 
 app.set("view engine", "ejs");
 
-const urlDatabase = {
-  b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "a"
-  },
-  i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "a"
-  }
-};
 
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  },
-  'a': {
-    id: 'a',
-    email: 'a@a.com',
-    password: '$2a$10$kW7bnZHyv9TpsUy0B2pWXu5B37aleX/3JO/fdC2VqfoqYl0THRP3O' // hashed version of 1234
-  }
-}
+const urlDatabase = {};
 
-function generateRandomString() {
-  return Math.random().toString(36).substring(2, 8)
-}
-
-const findUserByEmail = email => {
-  for (const id in users) {
-    const user = users[id]
-    if(user.email === email) {
-      return user;
-    } 
-  }
-  return null;
-}
+const users = {};
 
 app.get("/", (req, res) => {
   const userID = req.session.userID;
@@ -68,10 +32,6 @@ app.get("/", (req, res) => {
   }
 
   res.redirect('/urls')
-});
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -93,23 +53,23 @@ app.get("/set", (req, res) => {
 
  app.get('/urls', (req, res) => {
   const userID = req.session.userID;
-  let userURL = {}
+  let userURL = {} // placeholder for user specific URLs, gets new URLs from urlDatabase everytime /url page is run
 
   const urlsForUser = id => { // finds if id is equal. if equal returns userURLs only
     const userID = req.session.userID
     for (url in urlDatabase) {
       if (urlDatabase[url]['userID'] === userID) {
-        userURL = urlDatabase;
+        userURL[url] = urlDatabase[url]; // fix this, shouldn't use entire database
       }
     }
   }
 
+  console.log(users);
+
   urlsForUser(); // uses function, can refactor and remove this... later...
 
   if (!userID) { // redirects to /login if you are not logged in
-    console.log('you are not authorized to view this page')
-    res.redirect('/login');
-    /* res.status(401).send('you have to be logged in to view this page'); assignment asks to be redirected to html page but it is hard to navigate back to home page
+    res.status(401).send('you have to be logged in to view this page'); /* assignment asks to be redirected to html page but it is hard to navigate back to home page
     because / redirects you back to /urls which directs you redirects you to this error page. */
   }
 
@@ -126,9 +86,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
  app.post("/urls", (req, res) => { // add POST request
   const longURL = req.body['longURL'];  // Log the POST request body to the console, req.body = { longURL: 'input'}
   urlDatabase[generateRandomString()] = { 'longURL': longURL, 'userID': req.session.userID}; // inputs new id and longURL
-  console.log(urlDatabase);
   res.redirect('/urls');         // redirects back to url
-  
 });
 
 
@@ -138,8 +96,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
   const templateVars = { userID: userID, users: users}
   if (!userID) {
-    console.log('you are not authorized to create new URLs');
-    return res.redirect('/login');
+    res.status(404).send('you are not authorized to create new URLs')
   }
   res.render("urls_new", templateVars);
 });
@@ -170,8 +127,6 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
 
-  console.log(req.params.shortURL);
-
   for (url in urlDatabase) {
     if (req.params.shortURL === url) {
       const longURL = urlDatabase[req.params.shortURL]['longURL']; // fixed
@@ -181,7 +136,6 @@ app.get("/u/:shortURL", (req, res) => {
 
   res.status(404).send('this page does not exist.')
 
-  // res.redirect('http://www.lighthouselabs.ca')
 });
 
 app.get('/login', (req,res) => { // renders login
@@ -196,9 +150,8 @@ app.get('/login', (req,res) => { // renders login
 })
 
 app.post('/logout', (req, res) => { // logout
-  // res.clearCookie('userID');
   req.session = null;
-  res.redirect('/urls');
+  res.redirect('/login');
 })
 
 app.get('/error', (req, res) => {
@@ -225,7 +178,7 @@ app.post('/register', (req, res) => { // register
     return res.status(400).send('email/password cannot be blank');
   }
 
-  user = findUserByEmail(email);
+  user = findUserByEmail(email, users);
 
   if (user) {
     return res.status(400).send('email already exists')
@@ -248,7 +201,7 @@ app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   
-  user = findUserByEmail(email);
+  user = findUserByEmail(email, users);
 
   if (!user) {
     res.status(400).send('email not found')
@@ -258,15 +211,12 @@ app.post('/login', (req, res) => {
     if (!result) {
       return res.status(400).send('password does not match')
     }
-    // res.cookie('userID', user.ID);
     req.session.userID = user.id
-
-    res.redirect('/protected');
+    res.redirect('/urls');
   });
 })
 
 app.get('/protected', (req, res) => {
-  // const userID = req.cookies.userID;
   const userID = req.session.userID;
 
 
@@ -280,3 +230,7 @@ app.get('/protected', (req, res) => {
   res.render('protected', { user, users, userID });
 
 })
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
+});
