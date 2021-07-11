@@ -25,9 +25,6 @@ const users = {
   }
 };
 
-console.log(findUserByEmail(('user@example.com'), users))
-
-
 module.exports =  { findUserByEmail, generateRandomString }
 
 

@@ -55,19 +55,13 @@ app.get("/set", (req, res) => {
   const userID = req.session.userID;
   let userURL = {} // placeholder for user specific URLs, gets new URLs from urlDatabase everytime /url page is run
 
-  const urlsForUser = id => { // finds if id is equal. if equal returns userURLs only
-    const userID = req.session.userID
-    for (url in urlDatabase) {
-      if (urlDatabase[url]['userID'] === userID) {
-        userURL[url] = urlDatabase[url]; // fix this, shouldn't use entire database
-      }
+  // finds if id is equal. if equal returns userURLs only
+  for (url in urlDatabase) {
+    if (urlDatabase[url]['userID'] === userID) {
+      userURL[url] = urlDatabase[url]; // fix this, shouldn't use entire database
     }
   }
-
-  console.log(users);
-
-  urlsForUser(); // uses function, can refactor and remove this... later...
-
+  
   if (!userID) { // redirects to /login if you are not logged in
     res.status(401).send('you have to be logged in to view this page'); /* assignment asks to be redirected to html page but it is hard to navigate back to home page
     because / redirects you back to /urls which directs you redirects you to this error page. */
