@@ -73,14 +73,27 @@ app.get("/set", (req, res) => {
 
 // DELETE POST all post should end with redirect all gets should end with render
 app.post('/urls/:shortURL/delete', (req, res) => {
+  const userID = req.session.userID;
+
+  if (urlDatabase[req.params.shortURL]['userID'] !== userID) { // if userID !== logged in userID return error
+    return res.status(401).send('You are not authorized to delete this URL.')
+  }
+
   delete urlDatabase[req.params.shortURL]; // deletes shortURL key: value pair
   res.redirect('/urls'); // redirects back to /urls
 })
  
  app.post("/urls", (req, res) => { // add POST request
+  const userID = req.session.userID;
   const longURL = req.body['longURL'];  // Log the POST request body to the console, req.body = { longURL: 'input'}
-  urlDatabase[generateRandomString()] = { 'longURL': longURL, 'userID': req.session.userID}; // inputs new id and longURL
-  res.redirect('/urls');         // redirects back to url
+  const randomString = generateRandomString()
+
+  if (!userID) { // if userID !== logged in userID return error
+    return res.status(401).send('You are not authorized to POST on this page.')
+  }
+
+  urlDatabase[randomString] = { 'longURL': longURL, 'userID': req.session.userID}; // inputs new id and longURL
+  res.redirect(`/urls/${randomString}`);
 });
 
 
@@ -98,6 +111,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.post('/urls/:shortURL/', (req, res) => { // edit URL fixed
   const shortURL = req.params.shortURL;
   const body = req.body // body['newURL'] is new URL inputted in to edit box
+
   if (req.body['newURL']) {
     urlDatabase[shortURL]['longURL'] = body['newURL']; // edits newURL in to oldURL
   }
@@ -106,7 +120,11 @@ app.post('/urls/:shortURL/', (req, res) => { // edit URL fixed
 
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.userID;
-  
+
+  if (urlDatabase[req.params.shortURL]['userID'] !== userID) { // if userID !== logged in userID return error
+    res.status(401).send('You are not authorized to be on this page.')
+  }
+
   for (url in urlDatabase) { // if url in hyperlink is equal to url in database go to url
     if (url == req.params.shortURL) {
       const longURL = urlDatabase[req.params.shortURL]['longURL']; // urlDatabase with b2xVn2 format(req.params.shortURL) as key
@@ -116,7 +134,6 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 
   res.status(404).send('404 error page not found'); // else return error 
-
 });
 
 app.get("/u/:shortURL", (req, res) => {
