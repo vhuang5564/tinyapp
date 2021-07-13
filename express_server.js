@@ -86,6 +86,11 @@ app.get("/urls/new", (req, res) => {
 app.post('/urls/:shortURL/', (req, res) => {
   const shortURL = req.params.shortURL;
   const body = req.body;
+  const userID = req.session.userID;
+
+  if (urlDatabase[req.params.shortURL]['userID'] !== userID) {
+    return res.status(401).send('You are not authorized to edit this URL.');
+  }
 
   if (req.body['newURL']) {
     urlDatabase[shortURL]['longURL'] = body['newURL']; // edits newURL in to oldURL
